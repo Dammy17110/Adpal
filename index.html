@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#075e54">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>AdPal</title>
+<style>
+:root{--bg:#efeae2;--card:#fff;--text:#111b21;--muted:#667781;--line:#e1ddd5;--brand:#075e54;--accent:#25d366;--chip:#e7f5ee;box-sizing:border-box;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b141a;--card:#1f2c34;--text:#e9edef;--muted:#8696a0;--line:#2a3942;--brand:#202c33;--chip:#12332a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0b141a;--card:#1f2c34;--text:#e9edef;--muted:#8696a0;--line:#2a3942;--brand:#202c33;--chip:#12332a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--brand);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px;display:flex;align-items:center;position:sticky;top:0;z-index:5}
+header b{font-size:20px}header span{opacity:.8;font-size:13px}
+main{max-width:600px;margin:0 auto;padding:14px 14px calc(40px + env(safe-area-inset-bottom,0px))}
+.panel{background:var(--card);border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+.panel h2{margin:0 0 8px;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+input,textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit;margin-bottom:8px}
+textarea{min-height:70px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--text);padding:8px 14px;border-radius:20px;font:inherit;font-size:14px;cursor:pointer}
+.chip.on{background:var(--chip);border-color:var(--accent);font-weight:700}
+.go{width:100%;border:0;border-radius:26px;background:var(--accent);color:#06210f;font:inherit;font-weight:800;font-size:18px;padding:15px;cursor:pointer}
+.go:disabled{opacity:.6}
+.thumbs{display:flex;flex-wrap:wrap;gap:8px}
+.th{position:relative}.th img{width:78px;height:78px;object-fit:cover;border-radius:10px;display:block}
+.th button{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:0;background:#111b21;color:#fff;cursor:pointer}
+.pick{border:1px dashed var(--accent);background:transparent;color:var(--text);border-radius:10px;padding:12px;font:inherit;width:100%;cursor:pointer;margin-top:8px}
+.pick[hidden]{display:none}
+#cv{width:100%;height:auto;border-radius:14px;display:block;box-shadow:0 4px 18px rgba(0,0,0,.25)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.acts button,.acts a{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:20px;padding:9px 14px;font:inherit;font-size:14px;text-decoration:none;cursor:pointer}
+.acts .pri{background:var(--accent);border-color:var(--accent);color:#06210f;font-weight:700}
+.msg{color:var(--muted);text-align:center;margin:16px 0}
+.hint{color:var(--muted);font-size:13px;margin:6px 0 0}
+#res[hidden]{display:none}
+</style>
+</head>
+<body>
+<header><b>🛍️ AdPal</b><div style="margin-left:auto;display:flex;gap:10px;align-items:center"><button id="inst" hidden style="border:0;border-radius:16px;padding:6px 12px;background:#25d366;color:#06210f;font:inherit;font-weight:700;cursor:pointer">Install app</button><span>Free</span></div></header>
+<main>
+<div class="panel"><h2>1 · What do you sell?</h2>
+<input id="biz" placeholder="Business name (e.g. Tola’s Hair Studio)">
+<textarea id="sell" placeholder="Type of business and what you offer, e.g. Hairstylist: braids, wigs, hair treatment, makeup"></textarea></div>
+
+<div class="panel"><h2>2 · Where are you?</h2>
+<textarea id="addr" placeholder="Your address, e.g. 12 Allen Avenue, Ikeja, Lagos"></textarea>
+<input id="phone" type="tel" placeholder="Phone / WhatsApp number (optional)"></div>
+
+<div class="panel"><h2>3 · Your photos (up to 4)</h2>
+<div class="thumbs" id="thumbs"></div>
+<input type="file" id="file" accept="image/*" multiple hidden>
+<button class="pick" id="pick">📷 Add photos of your work or products</button>
+<p class="hint">Real photos make customers trust you. No photo? You’ll still get a bold card.</p></div>
+
+<div class="panel"><h2>Look</h2><div class="chips" data-k="style">
+<button class="chip on">Bold</button><button class="chip">Luxury</button><button class="chip">Fresh</button><button class="chip">Glam</button></div>
+<h2 style="margin-top:12px">Language</h2><div class="chips" data-k="lang">
+<button class="chip on">English</button><button class="chip">Pidgin</button><button class="chip">Yoruba mix</button><button class="chip">Igbo mix</button><button class="chip">Hausa mix</button></div></div>
+
+<button class="go" id="go">✨ Make my promo</button>
+
+<div id="res" hidden>
+<p class="msg" id="stat"></p>
+<canvas id="cv" width="1080" height="1350"></canvas>
+<div class="acts"><button class="pri" id="share">Share ↗</button><button id="save">⬇ Save image</button><button id="cp">Copy caption</button></div>
+<div class="panel" style="margin-top:12px"><h2>Caption (edit if you like)</h2><textarea id="cap" style="min-height:140px"></textarea>
+<div class="acts" id="links"></div></div>
+</div>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+let photos=[],imgs=[],content=null;
+const sel={style:"Bold",lang:"English"};
+const PAL={Bold:{a:"#d7263d",b:"#f46036",t:"#ffffff",ac:"#ffe66d",dk:"#2a0a0a"},Luxury:{a:"#0f0f10",b:"#2b2118",t:"#f5e9d0",ac:"#d4af37",dk:"#14100a"},Fresh:{a:"#064e3b",b:"#10b981",t:"#ffffff",ac:"#fde047",dk:"#052e22"},Glam:{a:"#4a044e",b:"#be185d",t:"#ffffff",ac:"#fbcfe8",dk:"#3b0764"}};
+const F="system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
+
+try{const s=JSON.parse(localStorage.getItem("adpal_biz")||"{}");["biz","sell","addr","phone"].forEach(k=>{if(s[k])$(k).value=s[k]})}catch(e){}
+function keep(){try{const o={};["biz","sell","addr","phone"].forEach(k=>o[k]=$(k).value);localStorage.setItem("adpal_biz",JSON.stringify(o))}catch(e){}}
+
+document.querySelectorAll(".chips").forEach(g=>g.addEventListener("click",e=>{
+  const c=e.target.closest(".chip");if(!c)return;
+  g.querySelectorAll(".chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");sel[g.dataset.k]=c.textContent;
+  if(g.dataset.k==="style"&&content)draw();
+}));
+
+$("pick").onclick=()=>$("file").click();
+$("file").onchange=async e=>{
+  for(const f of [...e.target.files].slice(0,4-photos.length)){try{photos.push(await shrink(f))}catch(x){}}
+  e.target.value="";thumbs();
+};
+function shrink(f){return new Promise((res,rej)=>{const im=new Image(),u=URL.createObjectURL(f);im.onload=()=>{const s=Math.min(1,800/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);const url=c.toDataURL("image/jpeg",.8);c.toBlob(b=>b?res({blob:b,url}):rej(),"image/jpeg",.8)};im.onerror=rej;im.src=u})}
+function thumbs(){const b=$("thumbs");b.innerHTML="";photos.forEach((p,i)=>{const w=document.createElement("div");w.className="th";const im=document.createElement("img");im.src=p.url;const x=document.createElement("button");x.textContent="×";x.onclick=()=>{photos.splice(i,1);thumbs()};w.append(im,x);b.append(w)});$("pick").hidden=photos.length>=4}
+function load(u){return new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=u})}
+
+function wrap(c,txt,x,y,maxW,lh,maxL){const w=String(txt||"").split(/\s+/);let l="",ls=[];for(const s of w){const t=l?l+" "+s:s;if(c.measureText(t).width>maxW&&l){ls.push(l);l=s}else l=t}if(l)ls.push(l);ls=ls.slice(0,maxL);ls.forEach((n,i)=>c.fillText(n,x,y+i*lh));return y+Math.max(0,ls.length-1)*lh}
+function cover(c,im,x,y,w,h){const s=Math.max(w/im.width,h/im.height),dw=im.width*s,dh=im.height*s;c.save();c.beginPath();c.rect(x,y,w,h);c.clip();c.drawImage(im,x+(w-dw)/2,y+(h-dh)/2,dw,dh);c.restore()}
+
+function draw(){
+  if(!content)return;
+  const cv=$("cv"),c=cv.getContext("2d"),W=1080,H=1350,PH=660,p=PAL[sel.style],n=imgs.length,G=8;
+  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,p.a);bg.addColorStop(.49,p.a);bg.addColorStop(1,p.b);c.fillStyle=bg;c.fillRect(0,0,W,H);
+  c.textBaseline="alphabetic";c.textAlign="left";
+  const name=$("biz").value.trim();
+  if(n){
+    const R={1:[[0,0,W,PH]],2:[[0,0,W/2-G/2,PH],[W/2+G/2,0,W/2-G/2,PH]],3:[[0,0,W/2-G/2,PH],[W/2+G/2,0,W/2-G/2,PH/2-G/2],[W/2+G/2,PH/2+G/2,W/2-G/2,PH/2-G/2]],4:[[0,0,W/2-G/2,PH/2-G/2],[W/2+G/2,0,W/2-G/2,PH/2-G/2],[0,PH/2+G/2,W/2-G/2,PH/2-G/2],[W/2+G/2,PH/2+G/2,W/2-G/2,PH/2-G/2]]}[n];
+    imgs.forEach((im,i)=>cover(c,im,...R[i]));
+    const f=c.createLinearGradient(0,PH-220,0,PH);f.addColorStop(0,"rgba(0,0,0,0)");f.addColorStop(1,p.a);c.fillStyle=f;c.fillRect(0,PH-220,W,222);
+    if(name){c.font="800 36px "+F;const w=Math.min(c.measureText(name).width+56,W-60);c.fillStyle="rgba(0,0,0,.6)";c.beginPath();c.roundRect(30,30,w,68,34);c.fill();c.fillStyle="#fff";c.fillText(name,58,76,W-120)}
+  }else{
+    c.fillStyle=p.ac;c.globalAlpha=.16;[[200,220,260],[900,440,210],[620,120,130]].forEach(([x,y,r])=>{c.beginPath();c.arc(x,y,r,0,7);c.fill()});c.globalAlpha=1;
+    c.fillStyle=p.t;c.textAlign="center";c.font="900 96px "+F;wrap(c,name||"Welcome",W/2,330,900,110,2);c.textAlign="left";
+  }
+  let y=PH+90;c.fillStyle=p.ac;c.font="900 96px "+F;y=wrap(c,String(content.headline||"").toUpperCase(),60,y,960,100,2);
+  c.fillStyle=p.t;c.font="500 40px "+F;y=wrap(c,content.tagline,60,y+64,960,52,2);
+  let x=60,top=y+36;c.font="700 34px "+F;
+  (content.offers||[]).slice(0,3).forEach(o=>{const t="✓ "+o,w=c.measureText(t).width+48;if(x+w>W-60){x=60;top+=84}c.fillStyle="rgba(255,255,255,.18)";c.strokeStyle=p.ac;c.lineWidth=3;c.beginPath();c.roundRect(x,top,w,66,33);c.fill();c.stroke();c.fillStyle=p.t;c.fillText(t,x+24,top+45);x+=w+14});
+  c.fillStyle=p.ac;c.fillRect(0,1170,W,180);c.fillStyle=p.dk;c.font="700 34px "+F;
+  const ad=$("addr").value.trim(),ph=$("phone").value.trim();
+  if(ad)wrap(c,"📍 "+ad,60,1224,960,42,2);
+  if(ph){c.font="900 46px "+F;c.fillText("📞 "+ph,60,1322)}
+}
+
+async function make(){
+  const sell=$("sell").value.trim(),res=$("res"),go=$("go");res.hidden=false;
+  if(!sell){$("stat").textContent="Tell me what you sell first.";return}
+  keep();
+  go.disabled=true;go.textContent="Designing…";$("stat").textContent="Writing your promo…";
+  const shown=photos.slice();
+  try{
+    const r=await fetch("/api/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({biz:$("biz").value.trim(),sell,addr:$("addr").value.trim(),phone:$("phone").value.trim(),lang:sel.lang,photos:shown.map(p=>p.url.split(",")[1])})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||"Something went wrong. Please try again.");
+    content=j;
+    imgs=(await Promise.all(shown.map(p=>load(p.url)))).filter(Boolean);
+    $("cap").value=content.caption||"";links();$("stat").textContent="Your promo is ready 👇";draw();
+    $("cv").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(e){
+    $("stat").textContent=(e&&e.message&&e.message!=="Failed to fetch")?e.message:"No internet or the server is down. Please try again.";
+  }
+  go.disabled=false;go.textContent="✨ Make my promo";
+}
+$("go").onclick=make;
+
+function blob(){return new Promise(r=>$("cv").toBlob(r,"image/png"))}
+$("share").onclick=async()=>{
+  const b=await blob(),file=new File([b],"promo.png",{type:"image/png"}),text=$("cap").value;
+  try{if(navigator.share){if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],text});else await navigator.share({text});return}}catch(e){if(e&&e.name==="AbortError")return}
+  $("stat").textContent="Tap Save image, then post it with your caption.";
+};
+$("save").onclick=async()=>{const b=await blob(),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download="promo.png";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
+$("cp").onclick=async()=>{const b=$("cp");try{await navigator.clipboard.writeText($("cap").value);b.textContent="Copied ✓"}catch(e){$("cap").select();b.textContent="Selected – copy it"}setTimeout(()=>b.textContent="Copy caption",1800)};
+function links(){const t=encodeURIComponent($("cap").value),L=[["WhatsApp","https://wa.me/?text="+t],["Telegram","https://t.me/share/url?url=%20&text="+t],["X","https://twitter.com/intent/tweet?text="+t],["SMS","sms:?body="+t]];const b=$("links");b.innerHTML="";L.forEach(([n,h])=>{const a=document.createElement("a");a.textContent=n;a.href=h;a.target="_blank";a.rel="noopener";b.append(a)});}
+$("cap").addEventListener("input",links);links();
+let dp;addEventListener("beforeinstallprompt",e=>{e.preventDefault();dp=e;$("inst").hidden=false});
+$("inst").onclick=async()=>{if(dp){dp.prompt();dp=null;$("inst").hidden=true}};
+if("serviceWorker" in navigator)navigator.serviceWorker.register("/sw.js").catch(()=>{});
+</script>
+</body>
+</html>

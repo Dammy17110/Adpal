@@ -1,0 +1,13 @@
+{
+  "name": "AdPal",
+  "short_name": "AdPal",
+  "description": "Make eye-catching promo cards for your business in seconds.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#075e54",
+  "theme_color": "#075e54",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
