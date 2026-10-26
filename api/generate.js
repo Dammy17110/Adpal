@@ -4,13 +4,47 @@ const LIMIT = Number(process.env.HOURLY_LIMIT || 12); // promos per person per h
 
 const clean = (s, n) => String(s || "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, n);
 
+// Finds a current Gemini "flash" model automatically, so old model names can't break the app.
+let cached = null;
+async function pickModel(key) {
+  if (process.env.MODEL) return process.env.MODEL;
+  if (cached && Date.now() - cached.t < 6 * 3600 * 1000) return cached.name;
+  let name = "gemini-flash-latest";
+  try {
+    const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=200", {
+      headers: { "x-goog-api-key": key },
+    });
+    if (r.ok) {
+      const j = await r.json();
+      const list = (j.models || [])
+        .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+        .map((m) => m.name.replace("models/", ""));
+      if (list.includes("gemini-flash-latest")) {
+        name = "gemini-flash-latest";
+      } else {
+        const re = /^gemini-(\d+(?:\.\d+)?)-flash(-lite)?(-preview(?:-[\w-]+)?)?$/;
+        const ranked = list
+          .map((n) => ({ n, m: n.match(re) }))
+          .filter((x) => x.m)
+          .map((x) => ({ n: x.n, lite: x.m[2] ? 1 : 0, prev: x.m[3] ? 1 : 0, v: parseFloat(x.m[1]) }))
+          .sort((a, b) => a.lite - b.lite || a.prev - b.prev || b.v - a.v);
+        if (ranked.length) name = ranked[0].n;
+      }
+    }
+  } catch (e) {
+    console.error("model list failed", e);
+  }
+  cached = { name, t: Date.now() };
+  return name;
+}
+
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
   const key = process.env.GEMINI_API_KEY;
   if (!key) return res.status(500).json({ error: "The app is not set up yet (missing API key)." });
 
-  // simple per-person limit to protect your money
+  // simple per-person limit to protect your quota
   const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
   const now = Date.now();
   const recent = (hits.get(ip) || []).filter((t) => now - t < 3600000);
@@ -44,17 +78,22 @@ Never invent prices, discounts, offers, opening hours or details not given. If p
   ];
 
   try {
-    const model = process.env.MODEL || "gemini-2.5-flash";
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2000 },
-      }),
-    });
+    let r, model;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      model = await pickModel(key);
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: { responseMimeType: "application/json", maxOutputTokens: 2000 },
+        }),
+      });
+      if (r.status === 404 && !process.env.MODEL) { cached = null; continue; }
+      break;
+    }
     if (!r.ok) {
-      console.error("Gemini error", r.status, await r.text());
+      console.error("Gemini error", r.status, model, await r.text());
       const msg = r.status === 429
         ? "Today’s free AI limit has been reached. Please try again later."
         : "The AI service is busy. Please try again in a moment.";
